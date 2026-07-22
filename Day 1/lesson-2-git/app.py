@@ -10,7 +10,7 @@ import joblib
 
 # Load Iris dataset
 data = load_iris()
-df = pd.DataFrame(data.data, columns=data.feature_names)
+df = pd.DataFrame(data.data, columns=data.feature_names) # this is the features of the dataset
 df['Target'] = data.target  # Class labels (0: Setosa, 1: Versicolor, 2: Virginica)
 
 # Split into features and labels
