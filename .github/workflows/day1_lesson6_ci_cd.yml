@@ -7,6 +7,7 @@ on:
     paths:
       - 'Day 1/lesson-6-ci-cd/**'  # Only trigger when files in this lesson change
       - .github/workflows/day1_lesson6_ci_cd.yml
+  
   pull_request:
     branches:
       - main
