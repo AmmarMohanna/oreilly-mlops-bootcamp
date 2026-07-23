@@ -3,11 +3,6 @@ numpy==2.4.6
 scipy==1.17.1
 scikit-learn==1.8.0
 threadpoolctl==3.6.0
-imbalanced-learn==0.14.1
-seaborn==0.13.2
-matplotlib==3.10.8
-mlflow==3.8.1
-pytest==9.0.2
 prometheus-client==0.23.1
 Flask==3.1.2
 Werkzeug==3.1.4

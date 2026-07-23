@@ -14,6 +14,12 @@ REQUEST_COUNT = Counter("predict_requests_total", "Total prediction requests")
 REQUEST_EXCEPTIONS = Counter("predict_exceptions_total", "Total exceptions in predictions")
 REQUEST_LATENCY = Histogram("predict_request_latency_seconds", "Latency for prediction requests")
 
+
+@app.get("/health")
+def health():
+    return jsonify({"status": "ok"})
+
+
 @app.route("/predict", methods=["POST"])
 @REQUEST_LATENCY.time()
 def predict():

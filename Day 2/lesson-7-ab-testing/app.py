@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 import pickle
-import numpy as np
+import pandas as pd
 import uvicorn
 
 # Load models and scaler
@@ -33,6 +33,12 @@ logs = []
 # Counter to alternate models A/B
 counter = 0
 
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.post("/predict")
 async def predict(request: Request):
     global counter
@@ -42,15 +48,14 @@ async def predict(request: Request):
 
     data = await request.json()
     feature_dict = data.get("features") 
+    if not feature_dict:
+        raise HTTPException(status_code=400, detail="'features' is required")
 
-    # Prepare numerical data
-    numerical_data = []
-    for col in numerical_features:
-        numerical_data.append(float(feature_dict[col]))
-    numerical_data = np.array(numerical_data).reshape(1, -1)
-
-    # Scale numerical features
-    numerical_data_scaled = scaler.transform(numerical_data)
+    numerical_data = pd.DataFrame(
+        [{col: float(feature_dict[col]) for col in numerical_features}],
+        columns=numerical_features,
+    )
+    numerical_data_scaled = scaler.transform(numerical_data)[0]
 
     # Prepare categorical data (apply label encoding)
     categorical_data = []
@@ -59,18 +64,26 @@ async def predict(request: Request):
         try:
             encoded_val = le.transform([feature_dict[col]])[0]
         except ValueError:
-            return {"error": f"Invalid category '{feature_dict[col]}' for feature '{col}'. Expected one of {list(le.classes_)}"}
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Invalid category '{feature_dict[col]}' for feature '{col}'. "
+                    f"Expected one of {list(le.classes_)}"
+                ),
+            )
         categorical_data.append(encoded_val)
-    categorical_data = np.array(categorical_data).reshape(1, -1)
 
-    # Prepare other features (as numerical, no encoding)
-    other_data = []
-    for col in other_features:
-        other_data.append(float(feature_dict[col]))
-    other_data = np.array(other_data).reshape(1, -1)
-
-    # Combine scaled numerical and encoded categorical features
-    processed_features = np.hstack((numerical_data_scaled, categorical_data, other_data))
+    processed_values = dict(zip(numerical_features, numerical_data_scaled))
+    processed_values.update(dict(zip(categorical_features, categorical_data)))
+    processed_values.update(
+        {col: float(feature_dict[col]) for col in other_features}
+    )
+    model_feature_order = list(model_a.feature_names_in_)
+    if model_feature_order != list(model_b.feature_names_in_):
+        raise RuntimeError("Model A and model B use different feature orders")
+    processed_features = pd.DataFrame(
+        [processed_values], columns=model_feature_order
+    )
 
     # Get prediction from the selected model
     if assigned_model == "A":

@@ -1,23 +1,21 @@
 import pytest
 import joblib
-import pandas as pd
 from sklearn.metrics import f1_score
 from data_pipeline.preprocessing import load_and_preprocess_data 
-import os
-import mlflow
-# Paths to your saved model and preprocessor
-experiment_id = "143003826376354799"
-run_id = "e681d08cc4c6447f859d63f01a1d15a3"
-model_uri = f"mlruns/{experiment_id}/{run_id}/artifacts/model"
+from pathlib import Path
+
+MODEL_PATH = Path("model/rf_model.pkl")
 
 # Test Model Accuracy and F1 Score
 @pytest.fixture(scope="module")
 def setup():
+    if not MODEL_PATH.exists():
+        from train import train
+        train()
+
     # Load and preprocess the data
-    _, X_test, _, y_test, _ = load_and_preprocess_data()  # Assuming X_test is already processed
-    
-    # Load the trained model (we do not need to load the preprocessor here)
-    clf = mlflow.sklearn.load_model(model_uri)
+    _, X_test, _, y_test, _ = load_and_preprocess_data()
+    clf = joblib.load(MODEL_PATH)
     
     return clf, X_test, y_test
 

@@ -1,82 +1,55 @@
+# Day 2: Applied MLOps
 
-#  Day 2: Applied MLOps 
+Day 2 contains four independent demos. Use a separate Python 3.11 Conda
+environment whose name exactly matches the lesson folder.
 
-Welcome to **Day 2** of the MLOps Bootcamp! Today’s focus is on **Applied MLOps** — deploying, scaling, and managing ML models in production environments using modern infrastructure tools like Kubernetes, HPA, and CI/CD pipelines.
+## Prerequisites
 
----
+- Conda
+- Docker Desktop
+- Kubernetes enabled in Docker Desktop
+- `kubectl`
 
-##  Repository Structure Overview
-
-### 1. `lesson-2-kubernetes-basics/` – Kubernetes Basics
-
-Deploy a simple ML inference API using **Kubernetes Deployments** and **Services**. Learn the basics of running containerized ML apps in a cluster.
-
-🔗 See [`lesson-2-kubernetes-basics/README.md`](lesson-2-kubernetes-basics/README.md) for setup and usage.
-
----
-
-### 2. `lesson-5-kubernetes-hpa/` – Horizontal Pod Autoscaling
-
-Set up **HPA (Horizontal Pod Autoscaling)** to automatically scale your service based on CPU usage. Simulate load and watch Kubernetes scale your pods dynamically.
-
-🔗 See [`lesson-5-kubernetes-hpa/README.md`](lesson-5-kubernetes-hpa/README.md) for step-by-step scaling instructions.
-
----
-
-### 3. `lesson-7-ab-testing/` – A/B Testing 
-
-Deploy two ML models (Logistic Regression and Random Forest) to predict diabetes risk using **FastAPI**, and simulate **A/B testing** .
-
-🔗 See [`lesson-7-ab-testing/README.md`](lesson-7-ab-testing/README.md) for deployment patterns and traffic control.
-
----
-
-### 4. `lesson-10-mlops-practices/` –  Integrating End-to-End MLOps
-
-Deploy a full MLOps workflow with:
-
-* **MLflow** for model tracking and versioning
-* **Flask API** for real-time inference
-* **Prometheus & Grafana** for monitoring
-* **Kubernetes** for scalable deployment
-
-This project demonstrates how to manage, serve, monitor, and scale ML models in production.
-
-🔗 See [`lesson-10-mlops-practices/README.md`](lesson-10-mlops-practices/README.md)  lesson-10-mlops-practices/README.md for end-to-end MLOps.
-
----
-
-##  Prerequisites
-
-Before starting, make sure you have the following installed:
-
-* Docker
-* Kubectl
-* Python 3.11 (required for MLflow compatibility)
-* Postman (for testing APIs)
-* MLflow
-
-### Environment Setup
-
-For the best experience, we recommend setting up a conda environment with Python 3.11:
+Confirm the local services before starting:
 
 ```bash
-# Create new environment with Python 3.11
-conda create -n mlops-py311 python=3.11
-
-# Activate the environment
-conda activate mlops-py311
-
-# Verify Python version
-python --version
+docker info
+kubectl cluster-info
+kubectl top nodes
 ```
 
-**Note**: Python 3.12+ may cause compatibility issues with MLflow. If you encounter `AttributeError: 'EntryPoints' object has no attribute 'get'`, please use Python 3.11.
+## One-time environment setup
 
----
+Run these commands from the repository root:
 
-##  Contributing
+```bash
+conda create -n lesson-2-kubernetes-basics python=3.11 -y
+conda run -n lesson-2-kubernetes-basics \
+  python -m pip install -r "Day 2/lesson-2-kubernetes-basics/age_detection/requirements.txt"
 
-Feel free to fork this repo, enhance the exercises, and submit a pull request. For bugs or feature requests, please open an issue.
+conda create -n lesson-5-kubernetes-hpa python=3.11 -y
+conda run -n lesson-5-kubernetes-hpa \
+  python -m pip install -r "Day 2/lesson-5-kubernetes-hpa/age_detection/requirements.txt"
 
+conda create -n lesson-7-ab-testing python=3.11 -y
+conda run -n lesson-7-ab-testing \
+  python -m pip install -r "Day 2/lesson-7-ab-testing/requirements.txt"
 
+conda create -n lesson-10-mlops-practices python=3.11 -y
+conda run -n lesson-10-mlops-practices \
+  python -m pip install -r "Day 2/lesson-10-mlops-practices/requirements.txt"
+```
+
+If an environment already exists, skip its `conda create` command and run only
+the matching install command.
+
+## Demo guides
+
+1. [Kubernetes basics](lesson-2-kubernetes-basics/README.md)
+2. [Kubernetes horizontal pod autoscaling](lesson-5-kubernetes-hpa/README.md)
+3. [A/B testing](lesson-7-ab-testing/README.md)
+4. [End-to-end MLOps practices](lesson-10-mlops-practices/README.md)
+
+The two age-detection lessons intentionally reuse the `age-detect` Kubernetes
+resource names and NodePort `30600`. Clean up one lesson before starting the
+other.

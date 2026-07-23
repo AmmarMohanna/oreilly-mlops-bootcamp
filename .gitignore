@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Generated Day 2 artifacts
+Day 2/lesson-7-ab-testing/models/
+Day 2/lesson-10-mlops-practices/model/
+Day 2/lesson-10-mlops-practices/mlruns/
+Day 2/lesson-10-mlops-practices/mlflow.db
