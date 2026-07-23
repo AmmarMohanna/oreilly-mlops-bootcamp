@@ -1,0 +1,5 @@
+*
+!app.py
+!requirements-runtime.txt
+!model/
+!model/**

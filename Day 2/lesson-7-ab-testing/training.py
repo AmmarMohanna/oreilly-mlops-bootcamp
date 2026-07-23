@@ -31,7 +31,9 @@ numerical_features = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level']
 other_features = [col for col in X.columns if col not in numerical_features]
 
 # Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
 
 # Scale numerical columns only
 scaler = StandardScaler()
@@ -45,7 +47,6 @@ X_train_scaled[other_features] = X_train[other_features]
 X_test_scaled = pd.DataFrame(X_test_num_scaled, columns=numerical_features, index=X_test.index)
 X_test_scaled[other_features] = X_test[other_features]
 
-print(X_test_scaled)
 # Initialize the SMOTE object for class balancing
 smt = SMOTE(random_state=42)
 X_train_bal, y_train_bal = smt.fit_resample(X_train_scaled, y_train)

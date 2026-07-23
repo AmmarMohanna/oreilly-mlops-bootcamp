@@ -1,169 +1,116 @@
+# Lesson 10: End-to-End MLOps Practices
 
-# lesson-10-mlops-practices
+This demo trains an Adult Income classifier, logs it to a local MLflow store,
+tests it, serves predictions and Prometheus metrics, and deploys the service to
+Docker Desktop Kubernetes.
 
-## End-to-End MLOps: Model Registry, Monitoring & Kubernetes Deployment
+## Set up the lesson environment
 
-This project demonstrates a full MLOps pipeline using the UCI Adult Income dataset. It integrates **MLflow**, **Flask**, **Prometheus**, **Grafana**, and **Kubernetes** to create a scalable and monitorable ML deployment.
+From the repository root:
 
----
+```bash
+conda activate lesson-10-mlops-practices
+cd "Day 2/lesson-10-mlops-practices"
+python -m pip install -r requirements.txt
+python -m pip check
+```
 
-## Objectives
+## Train and test
 
-* Train and version models using **MLflow**
-* Serve predictions using a **Flask API**
-* Monitor performance with **Prometheus** and **Grafana**
-* Deploy everything with **Kubernetes**
+No separate MLflow server is required for training:
 
----
+```bash
+python train.py
+python -m pytest -q
+```
 
-## Prerequisites
+Training creates ignored `model/`, `mlruns/`, and `mlflow.db` artifacts. To
+inspect the recorded run:
 
-* Python 3.11 (required for MLflow compatibility)
-* Docker + Docker Hub account
-* A Kubernetes cluster (e.g., Docker Desktop with K8s enabled)
-* `kubectl` configured
-* MLflow installed
-* Prometheus & Grafana Docker images
+```bash
+mlflow ui --backend-store-uri sqlite:///mlflow.db --host 127.0.0.1 --port 5001
+```
 
----
+Open `http://localhost:5001`.
 
-##  Project Structure 
+## Run the API locally
 
+```bash
+python app.py
+```
 
-* **`app.py`** – Serves predictions + metrics
-* **`dockerfile`** – Container build instructions
-* **`requirements.txt`** – Required Python packages
-* **`data/`** – Raw + new datasets
-* **`data_pipeline/`** – Data cleaning + encoding
-* **`train.py`** – Model training + logging
-* **`test/`** – Unit + API testing
-* **`k8s-deployment.yaml`** – Flask deployment + service
-* **`monitoring-deployment.yaml`** – Monitoring stack deployment
+In another terminal:
 
----
+```bash
+curl http://localhost:8000/health
 
-## How to Use
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "age": 39,
+    "workclass": "State-gov",
+    "fnlwgt": 77516,
+    "education": "Bachelors",
+    "education-num": 13,
+    "marital-status": "Never-married",
+    "occupation": "Adm-clerical",
+    "relationship": "Not-in-family",
+    "race": "White",
+    "sex": "Male",
+    "capital-gain": 2174,
+    "capital-loss": 0,
+    "hours-per-week": 40,
+    "native-country": "United-States"
+  }'
 
-1. **Set Up Conda Environment (Recommended)**
+curl http://localhost:8000/metrics
+```
 
-    Create and activate a conda environment with Python 3.11:
+Stop the API with `Ctrl+C`.
 
-    ```bash
-    # Create new environment with Python 3.11
-    conda create -n mlops-py311 python=3.11
-    
-    # Activate the environment
-    conda activate mlops-py311
-    
-    # Verify Python version
-    python --version
-    ```
+## Run with Docker
 
-2. **Install Dependencies**
+Train first so the `model/` directory exists, then:
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+```bash
+docker build -f dockerfile -t income-flask-app:latest .
+docker run --rm -p 8000:8000 income-flask-app:latest
+```
 
-3. **Train & Register Your Model (MLflow)**
+Test `/health`, `/predict`, and `/metrics` with the commands above.
 
-    Start the MLflow UI:
+## Run on Kubernetes
 
-    ```bash
-    mlflow ui --port 5001
-    ```
+Docker Desktop Kubernetes can use the locally built image:
 
-    Visit `http://localhost:5001`.
+```bash
+docker build -f dockerfile -t income-flask-app:latest .
+kubectl apply -f k8s-deployment.yaml
+kubectl rollout status deployment/income-flask-app --timeout=120s
+curl http://localhost:30800/health
+```
 
-    Train and register a model:
+Deploy the optional monitoring stack:
 
-    ```bash
-    python train.py
-    ```
+```bash
+kubectl apply -f monitoring-deployment.yaml
+kubectl rollout status deployment/prometheus --timeout=120s
+kubectl rollout status deployment/grafana --timeout=120s
+```
 
-4. **Build and Push Docker Image**
+Services:
 
-    ```bash
-    docker login
-    docker build -t yourdockerhub/income-flask-app:latest .
-    docker push yourdockerhub/income-flask-app:latest
-    ```
+- Flask API: `http://localhost:30800`
+- Prometheus: `http://localhost:30909`
+- Grafana: `http://localhost:30009` (`admin` / `admin`)
 
+In Grafana, add `http://prometheus-service:9090` as the Prometheus data source.
+Useful metrics include `predict_requests_total`,
+`predict_exceptions_total`, and `predict_request_latency_seconds`.
 
-5. **Kubernetes Deployment**
+## Clean up
 
-    Deploy Flask app, Prometheus, and Grafana:
-
-    ```bash
-    kubectl apply -f monitoring-deployment.yaml
-    kubectl apply -f k8s-deployment.yaml
-    ```
-6. **Test the API**
-
-| Service    | URL                                              |
-| ---------- | ------------------------------------------------ |
-| Flask API  | [http://localhost:30800/predict](http://localhost:30800/predict) |
-| Prometheus | [http://localhost:30909](http://localhost:30909) |
-| Grafana    | [http://localhost:30009](http://localhost:30009) |
-
-
-7. **Monitoring**
-
-* Login: `admin / admin`
-* Add Data Source:
-
-  * Type: **Prometheus**
-  * URL: `http://prometheus-service:9090`
-* Create Dashboards:
-
-  * `predict_requests_total`
-  * `predict_exceptions_total`
-  * `predict_request_latency_seconds`
-
-8. **Delete Deployments**
-
-* kubectl delete -f k8s-deployment.yaml
-* kubectl delete -f monitoring-deployment.yaml
-
----
-
-## Troubleshooting
-
-### MLflow Compatibility Issues
-
-If you encounter `AttributeError: 'EntryPoints' object has no attribute 'get'`:
-
-1. **Ensure you're using Python 3.11**:
-   ```bash
-   python --version
-   ```
-
-2. **If using Python 3.12+, create a conda environment with Python 3.11**:
-   ```bash
-   conda create -n mlops-py311 python=3.11
-   conda activate mlops-py311
-   pip install -r requirements.txt
-   ```
-
-3. **Alternative: Use MLflow server instead of UI**:
-   ```bash
-   python -m mlflow server --port 5001 --host 0.0.0.0
-   ```
-
-### Port Conflicts
-
-* **Port 5000**: Often reserved on macOS for AirPlay Receiver
-* **Solution**: Use port 5001 as shown in the instructions above
-
-
-## Summary
-
-You’ve built an end-to-end MLOps pipeline that includes:
-
-* **Model training + versioning** with MLflow
-* **Prediction serving** with Flask
-* **Real-time monitoring** with Prometheus
-* **Live dashboards** with Grafana
-* **Production-grade deployment** via Kubernetes
-
-
+```bash
+kubectl delete -f monitoring-deployment.yaml --ignore-not-found
+kubectl delete -f k8s-deployment.yaml --ignore-not-found
+```

@@ -1,104 +1,72 @@
+# Lesson 7: A/B Testing
 
-# lesson-7-ab-testing
+This demo trains logistic-regression and random-forest diabetes classifiers,
+alternates requests between them, and reports performance on labeled samples.
 
-## A/B Testing Simulator for Diabetes Prediction using FastAPI
+## Set up the lesson environment
 
-This lesson walks through building an A/B testing simulator for two machine learning models deployed using **FastAPI**, allowing you to test and compare their performance in predicting diabetes risk.
+From the repository root:
 
----
+```bash
+conda activate lesson-7-ab-testing
+cd "Day 2/lesson-7-ab-testing"
+python -m pip install -r requirements.txt
+python -m pip check
+```
 
-## Objectives
+## Train the models
 
-* Train two models (Logistic Regression & Random Forest) for diabetes prediction
-* Deploy both models behind a FastAPI `/predict` endpoint
-* Simulate a 50/50 traffic split for A/B testing
-* Log predictions and analyze model performance metrics
+```bash
+python training.py
+```
 
----
+This creates the ignored `models/` directory.
 
-## Prerequisites
+## Start the API
 
-* Python 3.x
-* Basic knowledge of machine learning
-* Familiarity with FastAPI
+```bash
+python app.py
+```
 
----
+The API runs at `http://localhost:8000`. Confirm it is ready:
 
-## Project Structure
+```bash
+curl http://localhost:8000/health
+```
 
-* `training.py`: Train and save both models
-* `app.py`: FastAPI app to serve predictions and route traffic
-* `simulator.py`: Simulates multiple client requests
-* `performance.py`: Fetches logs and evaluates accuracy
-* `requirements.txt`: Dependencies
-* `diabetes_data.csv`: Dataset used to train the models
+## Send one prediction
 
----
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "features": {
+      "age": 50,
+      "gender": "Male",
+      "smoking_history": "never",
+      "hypertension": 0,
+      "heart_disease": 0,
+      "bmi": 25.0,
+      "HbA1c_level": 6.0,
+      "blood_glucose_level": 140
+    },
+    "true_label": 1
+  }'
+```
 
-## How to use
+## Run the A/B simulation
 
-1. **Clone the repo:**
+Keep the API running. In another terminal, activate the same environment and
+return to the lesson directory:
 
-   ```bash
-   git clone https://github.com/AmmarMohanna/oreilly-mlops-bootcamp.git
-   cd oreilly-mlops-bootcamp/Day2/lesson-7-ab-testing
-   ```
+```bash
+conda activate lesson-7-ab-testing
+cd "Day 2/lesson-7-ab-testing"
+python simulator.py
+python performance.py
+```
 
-2. **Install dependencies:**
+The simulator sends exactly 100 labeled rows sampled from the dataset. The
+performance command prints request count and accuracy for models A and B.
 
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Train and save the models:**
-
-   ```bash
-   python training.py
-   ```
-
-   This will save models and preprocessors under the `models/` folder.
-
-4. **Run the FastAPI app:**
-
-   ```bash
-   uvicorn app:app --reload
-   ```
-
-5. **Test the API:**
-   Send a POST request to:
-
-   ```
-   http://localhost:8000/predict
-   ```
-
-   With sample JSON:
-
-   ```json
-   {
-     "features": {
-       "age": 50,
-       "gender": "Male",
-       "smoking_history": "never",
-       "hypertension": 0,
-       "heart_disease": 0,
-       "bmi": 25.0,
-       "HbA1c_level": 6.0,
-       "blood_glucose_level": 140
-     },
-     "true_label": 1
-   }
-   ```
-
-6. **Simulate 100+ requests:**
-
-   ```bash
-   python simulator.py
-   ```
-
-7. **Evaluate model performance:**
-
-   ```bash
-   python performance.py
-   ```
-
-
+Stop the API with `Ctrl+C`.

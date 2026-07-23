@@ -1,15 +1,20 @@
 import pandas as pd
 import requests
-response = requests.get("http://localhost:8000/logs")
+
+response = requests.get("http://localhost:8000/logs", timeout=10)
+response.raise_for_status()
 logs = response.json()
 
-# Create a DataFrame to analyze results
+if not logs:
+    raise SystemExit("No prediction logs found. Run simulator.py first.")
+
 df = pd.DataFrame(logs)
-print(df)
-# Filter only entries with true_label
 df = df[df['true_label'].notnull()]
 
-# Compute accuracy per model
-accuracy = df.groupby('model').apply(lambda x: (x['prediction'] == x['true_label']).mean())
+df["correct"] = df["prediction"] == df["true_label"]
+summary = df.groupby("model").agg(
+    requests=("model", "size"),
+    accuracy=("correct", "mean"),
+)
 
-print(accuracy)
+print(summary)

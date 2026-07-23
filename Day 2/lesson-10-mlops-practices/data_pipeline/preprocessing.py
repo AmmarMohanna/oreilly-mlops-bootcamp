@@ -5,8 +5,6 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from imblearn.over_sampling import SMOTE
-import seaborn as sns 
-import matplotlib.pyplot as plt
 
 def load_and_preprocess_data():
     columns = [
@@ -20,10 +18,13 @@ def load_and_preprocess_data():
     df_old = pd.read_csv("data/adult.data", header=None, names=columns, na_values=" ?")
     df_new = pd.read_csv("data/adult.newdata", header=None, names=columns, na_values=" ?")
     data = pd.concat([df_old, df_new], ignore_index=True)
-    print(data.head)
     
     # Remove duplicates
     data.drop_duplicates(inplace=True)
+
+    # Normalize whitespace in the UCI categorical columns.
+    string_columns = data.select_dtypes(include="object").columns
+    data[string_columns] = data[string_columns].apply(lambda col: col.str.strip())
     
     # Impute missing values
     missing_cols = ["workclass", "occupation", "native-country"]
@@ -33,8 +34,7 @@ def load_and_preprocess_data():
     
     # Encode target variables
     #print("Unique values in income before cleaning:", data["income"].unique())
-    data["income"] = data["income"].str.strip().str.replace(".", "", regex=False)
-    data["income"] = data["income"].astype(str).str.replace(" ", "", regex=False).str.replace(".", "", regex=False)
+    data["income"] = data["income"].str.replace(".", "", regex=False)
     #print("Cleaned income values:", data["income"].unique())
     data["income"] = data["income"].map({"<=50K": 0, ">50K": 1})
     

@@ -1,68 +1,68 @@
-# lesson-2-kubernetes-basics
+# Lesson 2: Kubernetes Basics
 
-##  Deploying a Dockerized Age Detection Model with Kubernetes
+This demo runs an OpenCV age-detection Flask API locally, in Docker, and on a
+local Kubernetes cluster.
 
-This lesson demonstrates how to deploy a pre-built age detection model (served via a Flask API) on a local Kubernetes cluster using **Deployments** and **Services**.
+## Set up the lesson environment
 
----
+From the repository root:
 
-##  Objectives
+```bash
+conda activate lesson-2-kubernetes-basics
+cd "Day 2/lesson-2-kubernetes-basics"
+python -m pip install -r age_detection/requirements.txt
+python -m pip check
+```
 
-* Deploy the Dockerized age detection API on Kubernetes
-* Create Kubernetes `Deployment` and `Service` resources
-* Expose the API externally using `NodePort`
+## Run locally
 
----
+```bash
+python age_detection/app.py
+```
 
-##  Prerequisites
+In another terminal:
 
-* Docker Desktop (with Kubernetes enabled) or Minikube
-* kubectl
-* Postman (for testing)
+```bash
+curl http://localhost:8080/health
+curl -F "image=@/absolute/path/to/photo.jpg" \
+  http://localhost:8080/detect_age
+```
 
----
+Stop the server with `Ctrl+C`.
 
-##  Project Structure
+## Run with Docker
 
-* `Dockerfile`: Container image for the Flask API
-* `k8s-deployment.yml`: Kubernetes manifest (Deployment + Service)
+The Docker build context must be the `age_detection` directory:
 
----
+```bash
+docker build -t age-detect:latest ./age_detection
+docker run --rm -p 8080:8080 age-detect:latest
+```
 
-## How to use 
-1. **Clone the repo:**
-   ```bash
-   git clone https://github.com/AmmarMohanna/oreilly-mlops-bootcamp.git
-   cd oreilly-mlops-bootcamp/Day2/lesson-2-kubernetes-basics
+Test it with the same `/health` and `/detect_age` commands above.
 
-2. **Build Docker Image**
-    ```bash
-    docker build -t age-detect:latest .
-    ```
+## Run on Kubernetes
 
-3. **Deploy to Kubernetes:**
+Docker Desktop Kubernetes can use the locally built image directly:
 
-    ```bash
-    kubectl apply -f k8s-deployment.yml
-    ```
+```bash
+docker build -t age-detect:latest ./age_detection
+kubectl apply -f k8s-deployment.yml
+kubectl rollout status deployment/age-detect --timeout=120s
+kubectl get pods,service
+curl http://localhost:30600/health
+curl -F "image=@/absolute/path/to/photo.jpg" \
+  http://localhost:30600/detect_age
+```
 
-4. **Test the API:**
+For Minikube, load the image before applying the manifest:
 
-    Send a POST request via Postman to:
+```bash
+minikube image load age-detect:latest
+```
 
-    ```
-    http://localhost:30600/detect_age
-    ```
+## Clean up
 
----
-
-## Notes
-- The service is exposed on **NodePort 30600**.
-- The container and service now use **port 8080** internally (not 5000).
-- Make sure your requests go to `http://localhost:30600/detect_age`.
-- If you update the container port in your Flask app, ensure it matches the Kubernetes YAML.
-
-
-
-
-
+```bash
+kubectl delete -f k8s-deployment.yml
+```

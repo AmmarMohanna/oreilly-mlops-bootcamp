@@ -9,6 +9,7 @@ spec:
     app: age-detect  # Must match the label on the pod
   ports:
     - port: 8080         # Port exposed inside the cluster
+      targetPort: 8080   # Port exposed by the container
       nodePort: 30600    # Port exposed on each node for external access
 ---
 apiVersion: apps/v1    
@@ -31,3 +32,15 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 8080           # Port the container listens on
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10

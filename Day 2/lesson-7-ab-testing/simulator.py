@@ -1,35 +1,29 @@
 import requests
-import random
-import json
+import pandas as pd
 
 url = "http://localhost:8000/predict"
 
-# Define possible categories
-genders = ["Male", "Female"]
-smoking_histories = ["never", "former", "current", "not current", "ever", "unknown"]
-
 results = []
+data = pd.read_csv("diabetes_prediction_dataset.csv")
+samples = data.sample(n=100, random_state=42)
 
-# Simulate 100 requests
-for i in range(100):
+for _, row in samples.iterrows():
     sample = {
         "features": {
-            "age": random.randint(20, 80),
-            "bmi": round(random.uniform(18, 40), 1),
-            "HbA1c_level": round(random.uniform(4.0, 10.0), 1),
-            "blood_glucose_level": random.randint(70, 200),
-            "gender": random.choice(genders),
-            "smoking_history": random.choice(smoking_histories),
-            "hypertension": random.choice([0, 1]),
-            "heart_disease": random.choice([0, 1])
+            "age": float(row["age"]),
+            "bmi": float(row["bmi"]),
+            "HbA1c_level": float(row["HbA1c_level"]),
+            "blood_glucose_level": int(row["blood_glucose_level"]),
+            "gender": str(row["gender"]),
+            "smoking_history": str(row["smoking_history"]),
+            "hypertension": int(row["hypertension"]),
+            "heart_disease": int(row["heart_disease"]),
         },
-        "true_label": random.choice([0, 1])  # randomly assign true labels
+        "true_label": int(row["diabetes"]),
     }
 
-    response = requests.post(url, json=sample)
-    if response.status_code == 200:
-        results.append(response.json())
-    else:
-        print(f"Request {i} failed: {response.text}")
+    response = requests.post(url, json=sample, timeout=10)
+    response.raise_for_status()
+    results.append(response.json())
 
-print("Done sending requests!")
+print(f"Sent {len(results)} requests successfully.")

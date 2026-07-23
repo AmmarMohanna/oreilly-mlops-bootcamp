@@ -1,17 +1,13 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+FROM python:3.11-slim
 
-
-# Set the working directory in the container
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-# Copy the current directory contents into the container at /app
-COPY . .
+COPY requirements-runtime.txt .
+RUN pip install --no-cache-dir -r requirements-runtime.txt
 
-# Expose port for Flask app
+COPY app.py .
+COPY model ./model
+
 EXPOSE 8000
 
-# Command to run the application
 CMD ["python", "app.py"]
